@@ -23,7 +23,7 @@ data SECS = SECS {
 data MiscSelect = MiscSelect {
   miscExInfo             :: Bool   -- Report information about page fault and general protection exception that occurred inside an enclave
   , miscReserved_bit1_32 :: Word32 -- Wasted space
-  }
+  } deriving (Eq)
 
 data Attributes = Attributes {
   attrInit                :: Bool -- if the enclave has been initialized by EINIT
@@ -34,9 +34,13 @@ data Attributes = Attributes {
   , attrEinitTokenKey     :: Bool -- EINIT token key is available from EGETKEY
   , attrReserved_bit6_63  :: L.ByteString -- Reserved. Set to zero.
   , attrXFRM              :: XFRM -- See XFRM data type
-  }
+  }deriving(Eq, Show)
 
-data XFRM = XFRM
+data XFRM = XFRM {
+  xfrmEnabled  :: Bool
+  , xfrmXCR0  :: Word64    -- Valid value of XCR0
+  , xfrmHasXSave :: Bool -- Does the CPU has XSAVE instruction
+  } deriving(Eq, Show)
 
 data PageInfo = PageInfo {
   pgEnclaveLinAddr  :: Word64        -- Enclave linear address.
