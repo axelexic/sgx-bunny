@@ -51,7 +51,6 @@ data PageInfo = PageInfo {
 
 data SecInfo = SecInfo {
   siFlags       :: SecInfoFlags
-  , siReserved  :: Word64
   }
 
 data SecInfoFlags = SecInfoFlags {

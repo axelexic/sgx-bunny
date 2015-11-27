@@ -117,4 +117,21 @@ testXFRM =
                           decode xfrm_bin_xsave    == xfrm_set_xsave
   in put_truth && get_truth
 
+testAttributes :: Bool
+testAttributes = let
+  res   = "\x00\x00\x00\x00\x00\x00\x00"
+  xfrms = [ decode "\x00\x00\x00\x00\x00\x00\x00\x00",
+            decode "\xC0\x00\x00\x00\x00\x00\x00\x00",
+            decode "\xC0\x00\x00\x00\x00\x00\x07\x10"] :: [XFRM]
+
+  attrs = [ Attributes init debug m64 False prov einit res xfrm |
+            init   <- [True, False],
+            debug  <- [True, False],
+            m64    <- [True, False],
+            prov   <- [True, False],
+            einit  <- [True, False],
+            xfrm   <- xfrms ]
+  in
+    foldl (\t -> \x -> t && (x == (decode $ encode x))) True attrs
+
 #endif
