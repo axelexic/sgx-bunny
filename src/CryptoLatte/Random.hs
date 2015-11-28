@@ -4,10 +4,10 @@ module CryptoLatte.Random (
   SystemRandom
   , BitCount
   , ByteCount
-  , getSystemRandom
-  , getRandomBytes
-  , getRandomInteger
-  , getRandomPrime
+  , newSystemRandom
+  , genRandomBytes
+  , genRandomInteger
+  , genRandomPrime
   )  where
 
 import qualified Data.ByteString.Lazy as L
@@ -18,7 +18,6 @@ import Data.Bits          (unsafeShiftL, unsafeShiftR, (.|.) )
 import Control.Monad
 import CryptoLatte.CryptoExceptions
 import GHC.Exts
-import GHC.Prim
 import GHC.Integer.GMP.Internals
 
 type BitCount  = Int
@@ -33,16 +32,16 @@ data SystemRandom = SystemRandom {
   }
 
 
-getSystemRandom :: SystemRandom
-getSystemRandom = SystemRandom {
+newSystemRandom :: SystemRandom
+newSystemRandom = SystemRandom {
   getRandomState =
       catch (liftM Right (openBinaryFile devRandomSource ReadMode))
             (return . Left)
   }
 
 
-getRandomBytes :: SystemRandom -> ByteCount -> IO L.ByteString
-getRandomBytes rnd count =
+genRandomBytes :: SystemRandom -> ByteCount -> IO L.ByteString
+genRandomBytes rnd count =
   if count < 0
   then throwIO InvalidSize
   else do
@@ -52,30 +51,30 @@ getRandomBytes rnd count =
       Right h -> L.hGet h count
 
 
-getRandomInteger :: SystemRandom   -- System Random as Source
+genRandomInteger :: SystemRandom   -- System Random as Source
                  -> BitCount      -- Number of bits
                  -> IO Integer     -- Resulting Integer
-getRandomInteger rnd bitcount =
+genRandomInteger rnd bitcount =
   let byteCount      = (bitcount + 7) `div` 8
       zero_out_bits  = (byteCount * 8) - bitcount
-      zero_out_arr x  = (((head x) `unsafeShiftL` zero_out_bits) `unsafeShiftR` zero_out_bits) : tail x
+      zero_out_arr x  = ((head x `unsafeShiftL` zero_out_bits) `unsafeShiftR` zero_out_bits) : tail x
       bs2int    = foldr' (\x -> \y -> (y `unsafeShiftL` 8) .|. (fromIntegral x) ) 0x0
   in if bitcount <= 0
      then throwIO InvalidSize
      else do
-       bytes <- getRandomBytes rnd byteCount
+       bytes <- genRandomBytes rnd byteCount
        return . bs2int . zero_out_arr . L.unpack $ bytes
 
 
-getRandomPrime :: SystemRandom     -- SystemRandom as Source
+genRandomPrime :: SystemRandom     -- SystemRandom as Source
                -> BitCount         -- Number of bits in the prime
                -> Int              -- Retry count >= 0
                -> IO Integer       -- The resulting value
-getRandomPrime rnd bits count =
+genRandomPrime rnd bits count =
   if count < 0
   then throwIO PrimeNumberNotFound
   else do
-    p <- fmap nextPrimeInteger (getRandomInteger rnd bits)
+    p <- fmap nextPrimeInteger (genRandomInteger rnd bits)
     if I# (word2Int# (sizeInBaseInteger p 2#)) > bits
-      then getRandomPrime rnd bits (count - 1)
+      then genRandomPrime rnd bits (count - 1)
       else return p
