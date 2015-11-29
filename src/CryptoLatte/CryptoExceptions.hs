@@ -12,6 +12,8 @@ import Data.Typeable
 data CryptoExceptions = RandomSourceUnavailable
                       | InvalidSize
                       | PrimeNumberNotFound
+                      | TooManyRetries
+                      | KeyGenParametersInvalid
                       deriving (Show, Typeable)
 
 instance Exception CryptoExceptions
